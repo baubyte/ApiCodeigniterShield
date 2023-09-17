@@ -1,0 +1,9 @@
+#!/bin/bash
+set -a
+source <(cat ../.env | sed -e '/^#/d;/^\s*$/d' -e "s/'/'\\\''/g" -e "s/=\(.*\)/='\1'/g")
+set +a
+
+args="$@"
+command="php spark $args"
+echo "$command"
+docker exec -it ${APP_NAME}-web bash -c "sudo -u devbaubyte /bin/bash -c \"$command\""

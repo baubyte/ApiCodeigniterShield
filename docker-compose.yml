@@ -1,0 +1,57 @@
+version: "3.7"
+services: 
+  db:
+    image: mysql:5.7
+    container_name: "${APP_NAME}-db"
+    restart: unless-stopped
+    environment: 
+      MYSQL_ROOT_PASSWORD: "${PASSWORD_ROOT_MYSQL}"
+    ports: 
+      - "${PORT_MYSQL}:3306"
+    volumes: 
+      - ./mysql-data/:/var/lib/mysql
+    networks:
+      - "internal-networks"
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: "${APP_NAME}-pma"
+    restart: unless-stopped
+    ports:
+      - "${PORT_PHPMYADMIN}:80"
+    environment:
+      PMA_ARBITRARY: 0
+      PMA_HOST: "${APP_NAME}-db"
+      PMA_PORT: 3306
+    networks:
+      - "internal-networks"
+    depends_on: 
+      - db
+  app:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile
+      args:
+        uid: 1000
+    image: "${APP_NAME}-dev"
+    container_name: "${APP_NAME}-web"
+    restart: unless-stopped
+    ports: 
+      - "${PORT_APACHE_WEB}:80"
+      - "${PORT_APACHE_WEB_SSL}:443"
+    environment:
+      - APACHE_RUN_USER=#1000
+      - APACHE_RUN_GROUP=#1000
+    volumes: 
+      - ./app-src/:/var/www
+      - ./app-src/public:/var/www/html 
+    networks:
+      - "internal-networks"
+    depends_on:
+      - db
+networks:
+  internal-networks:
+    name: "${APP_NAME}"
+    driver: bridge
+volumes: 
+  mysql-data:
+  app-src:
